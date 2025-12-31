@@ -1,0 +1,27 @@
+{
+  "name": "telegram-bot-railway",
+  "version": "1.0.0",
+  "description": "Telegram Bot dengan fitur Nekopoi dan Cosplay menggunakan Telegraf",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "telegraf",
+    "railway",
+    "nodejs"
+  ],
+  "author": "Gemini AI",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "telegraf": "^4.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
