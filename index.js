@@ -106,6 +106,47 @@ const body = ctx.message.text;
     }
     break;
 }
+                case 'sxnxx': {
+    if (!text) return ctx.reply(`Contoh: ${prefix}sxnxx wuthering waves`);
+    await ctx.reply('🔍 Mencari video, mohon tunggu...');
+
+    try {
+        const response = await axios.get(`https://rynekoo-api.hf.space/dsc/xnxx/search?q=${encodeURIComponent(text)}`);
+        const data = response.data;
+
+        if (!data.success || !data.result || data.result.length === 0) {
+            return ctx.reply('❌ Video tidak ditemukan.');
+        }
+
+        const results = data.result.slice(0, 10); // Batasi 10 hasil
+        let caption = `<b>🔞 XNXX Search: ${text}</b>\n\n`;
+        
+        const buttons = [];
+        for (let i = 0; i < results.length; i += 2) {
+            const row = [];
+            row.push(Markup.button.callback(`${i + 1}`, `xnxxdl_${i}`));
+            if (results[i + 1]) {
+                row.push(Markup.button.callback(`${i + 2}`, `xnxxdl_${i + 1}`));
+            }
+            buttons.push(row);
+        }
+
+        const listText = results.map((v, i) => {
+            return `<b>${i + 1}.</b> ${v.title}\n👁‍🗨 ${v.views} | 🕒 ${v.duration} | 📺 ${v.resolution}`;
+        }).join('\n\n');
+
+        await ctx.replyWithPhoto(results[0].cover, {
+            caption: `${caption}${listText}`,
+            parse_mode: 'HTML',
+            ...Markup.inlineKeyboard(buttons)
+        });
+
+    } catch (e) {
+        console.error(e);
+        ctx.reply('⚠️ Terjadi kesalahan pada API Pencarian.');
+    }
+    break;
+}
         case 'sneko': {
     if (!text) return ctx.reply(`Contoh: ${prefix}sneko wuthering waves`);
     
@@ -275,6 +316,7 @@ const jamMenit = sekarang.toLocaleTimeString('id-ID', {
     menuMsg += `┏━━━〔 <b>NEKOPOI</b> 〕━━━┓\n`;
     menuMsg += `┃ 🐾 <code>/sneko</code> &lt;query&gt;\n`;
     menuMsg += `┃ 📑 <code>/sdetail</code> &lt;id&gt;\n`;
+    menuMsg += `┃ 🐾 <code>/sxnxx</code> &lt;query&gt;\n`;
     menuMsg += `┗━━━━━━━━━━━━━━━━━━┛\n\n`;
 
     menuMsg += `┏━━━〔 <b>COSPLAY</b> 〕━━━┓\n`;
@@ -329,6 +371,52 @@ bot.on('callback_query', async (ctx) => {
     // LOG CLICK BUTTON
     console.log(`[${time}] -> [BUTTON CLICK] ${user.first_name} : ${data}`);
 // Tambahkan di dalam listener callback_query yang sudah ada
+    if (data.startsWith('xnxxdl_')) {
+    const index = parseInt(data.split('_')[1]);
+    
+    // Ambil query dari caption pesan sebelumnya
+    const queryMatch = ctx.callbackQuery.message.caption.match(/Search: (.*)\n/);
+    const query = queryMatch ? queryMatch[1] : '';
+
+    await ctx.answerCbQuery('Sedang mengirim video...');
+
+    try {
+        // 1. Ambil URL video dari hasil pencarian
+        const searchRes = await axios.get(`https://rynekoo-api.hf.space/dsc/xnxx/search?q=${encodeURIComponent(query)}`);
+        const targetUrl = searchRes.data.result[index].url;
+        const title = searchRes.data.result[index].title;
+
+        // 2. Tembak API Download
+        const dlRes = await axios.get(`https://rynekoo-api.hf.space/dwn/xnxx?url=${encodeURIComponent(targetUrl)}`);
+        const videoData = dlRes.data.result.videos;
+        const highResUrl = videoData.high;
+
+        // 3. Kirim Video Langsung
+        await ctx.replyWithVideo({ url: highResUrl }, {
+            caption: `<b>🎬 ${title}</b>\n\n✅ <i>Berhasil dikirim langsung!</i>`,
+            parse_mode: 'HTML'
+        }).catch(async (err) => {
+            // Jika error (biasanya karena ukuran > 50MB atau server TG lambat)
+            console.log("Gagal kirim video langsung, mengirim link...");
+            
+            let caption = `<b>🎬 ${title}</b>\n\n`;
+            caption += `⚠️ <b>Gagal Kirim Langsung:</b> Ukuran video mungkin lebih dari 50MB (Limit Bot).\n\n`;
+            caption += `👇 <b>Silakan klik link di bawah:</b>`;
+
+            await ctx.replyWithPhoto(dlRes.data.result.thumb, {
+                caption: caption,
+                parse_mode: 'HTML',
+                ...Markup.inlineKeyboard([
+                    [Markup.button.url('📥 Download High Res', highResUrl)]
+                ])
+            });
+        });
+
+    } catch (e) {
+        console.error(e);
+        ctx.reply('⚠️ Terjadi kesalahan saat memproses video.');
+    }
+}
 if (data === 'btn_sneko') {
     await ctx.answerCbQuery();
     await ctx.reply('Silakan gunakan format: /sneko [judul]');
