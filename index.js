@@ -135,9 +135,9 @@ const body = ctx.message.text;
             return `<b>${i + 1}.</b> ${v.title}\n👁‍🗨 ${v.views} | 🕒 ${v.duration} | 📺 ${v.resolution}`;
         }).join('\n\n');
 
-        await ctx.replyWithPhoto(results[0].cover, {
-            caption: `${caption}${listText}`,
+       await ctx.reply(`${caption}${listText}`, {
             parse_mode: 'HTML',
+            disable_web_page_preview: true, // Agar tidak muncul kotak link preview yang mengganggu
             ...Markup.inlineKeyboard(buttons)
         });
 
@@ -403,13 +403,14 @@ bot.on('callback_query', async (ctx) => {
             caption += `⚠️ <b>Gagal Kirim Langsung:</b> Ukuran video mungkin lebih dari 50MB (Limit Bot).\n\n`;
             caption += `👇 <b>Silakan klik link di bawah:</b>`;
 
-            await ctx.replyWithPhoto(dlRes.data.result.thumb, {
-                caption: caption,
+            await ctx.reply(caption, {
                 parse_mode: 'HTML',
+                disable_web_page_preview: true,
                 ...Markup.inlineKeyboard([
-                    [Markup.button.url('📥 Download High Res', highResUrl)]
+                    [Markup.button.url('📥 Download / Stream (High)', highResUrl)],
+                    [Markup.button.url('📥 Alternative (Low)', videoData.low)]
                 ])
-            });
+            })
         });
 
     } catch (e) {
